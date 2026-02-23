@@ -4,7 +4,7 @@ import "./App.css";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
 
-/* 🔥 UPDATED FIREBASE CONFIG */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyACRZUr-_A7Agv9QAZfW627F4fl-3mBifQ",
   authDomain: "projectt2-1b1f4.firebaseapp.com",
@@ -22,14 +22,28 @@ const db = getDatabase(app);
 
 export default function App() {
   const [led, setLed] = useState(false);
+  const [temperature, setTemperature] = useState(0);
+  const [humidity, setHumidity] = useState(0);
 
-  /* 🔄 READ FROM FIREBASE */
+  /* 🔄 READ DATA FROM FIREBASE */
   useEffect(() => {
     const ledRef = ref(db, "LED");
+    const tempRef = ref(db, "Temperature");
+    const humRef = ref(db, "Humidity");
 
     onValue(ledRef, (snapshot) => {
       const value = snapshot.val();
       setLed(value === 1);
+    });
+
+    onValue(tempRef, (snapshot) => {
+      const value = snapshot.val();
+      setTemperature(value);
+    });
+
+    onValue(humRef, (snapshot) => {
+      const value = snapshot.val();
+      setHumidity(value);
     });
   }, []);
 
@@ -40,14 +54,13 @@ export default function App() {
 
   return (
     <div className="container">
-      <h1 className="title">Smart LED Dashboard</h1>
+      <h1 className="title">Smart LED & DHT11 Dashboard</h1>
 
       <div className="grid">
 
         {/* LED CONTROL */}
         <div className="card">
           <h2>LED Control</h2>
-
           <label className="switch">
             <input
               type="checkbox"
@@ -56,10 +69,16 @@ export default function App() {
             />
             <span className="slider"></span>
           </label>
-
           <p className={led ? "on" : "off"}>
             {led ? "LED ON" : "LED OFF"}
           </p>
+        </div>
+
+        {/* TEMPERATURE & HUMIDITY */}
+        <div className="card">
+          <h2>Sensor Data (DHT11)</h2>
+          <p>Temperature: {temperature}°C</p>
+          <p>Humidity: {humidity}%</p>
         </div>
 
         {/* STATS */}
@@ -88,6 +107,8 @@ export default function App() {
             <li>System Online</li>
             <li>Firebase Connected</li>
             <li>{led ? "LED Turned ON" : "LED Turned OFF"}</li>
+            <li>Temperature Updated: {temperature}°C</li>
+            <li>Humidity Updated: {humidity}%</li>
           </ul>
         </div>
 
