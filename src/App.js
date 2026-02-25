@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue } from "firebase/database";
+import { getDatabase, ref, onValue, set } from "firebase/database";
 import "./App.css";
 
-// 🔥 Firebase Config (projectt2-1b1f4)
 const firebaseConfig = {
   apiKey: "AIzaSyACRZUr-_A7Agv9QAZfW627F4fl-3mBifQ",
   authDomain: "projectt2-1b1f4.firebaseapp.com",
@@ -19,27 +18,79 @@ const database = getDatabase(app);
 
 function App() {
 
-  const [soilMoisture, setSoilMoisture] = useState("--");
+  const [data, setData] = useState({
+    temperature: "--",
+    humidity: "--",
+    soilMoisture: "--",
+    waterLevel: "--",
+    pumpStatus: "OFF"
+  });
 
   useEffect(() => {
+    const sensorRef = ref(database, "sensors");
 
-    const soilRef = ref(database, "sensors/soilMoisture");
-
-    onValue(soilRef, (snapshot) => {
-      const value = snapshot.val();
-      if (value !== null) {
-        setSoilMoisture(value);
+    const unsubscribe = onValue(sensorRef, (snapshot) => {
+      const sensorData = snapshot.val();
+      if (sensorData) {
+        setData({
+          temperature: sensorData.temperature || "--",
+          humidity: sensorData.humidity || "--",
+          soilMoisture: sensorData.soilMoisture || "--",
+          waterLevel: sensorData.waterLevel || "--",
+          pumpStatus: sensorData.pumpControl || "OFF"
+        });
       }
     });
 
+    return () => unsubscribe();
   }, []);
 
+  const turnPumpOn = () => {
+    set(ref(database, "sensors/pumpControl"), "ON");
+  };
+
+  const turnPumpOff = () => {
+    set(ref(database, "sensors/pumpControl"), "OFF");
+  };
+
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>🌱 Soil Moisture Monitor</h1>
-      <h2 style={{ fontSize: "60px", color: "#22c55e" }}>
-        {soilMoisture} %
-      </h2>
+    <div className="main">
+      <h1>🌱 Smart Agriculture Dashboard</h1>
+
+      <div className="container">
+
+        <div className="card">
+          <h2>🌡 Temperature</h2>
+          <p>{data.temperature} °C</p>
+        </div>
+
+        <div className="card">
+          <h2>💧 Humidity</h2>
+          <p>{data.humidity} %</p>
+        </div>
+
+        <div className="card">
+          <h2>🌱 Soil Moisture</h2>
+          <p>{data.soilMoisture}</p>
+        </div>
+
+        <div className="card">
+          <h2>💦 Water Level</h2>
+          <p>{data.waterLevel}</p>
+        </div>
+
+        <div className={`card ${data.pumpStatus === "ON" ? "alert" : "safe"}`}>
+          <h2>🚿 Pump Status</h2>
+          <p>{data.pumpStatus}</p>
+          <button onClick={turnPumpOn}>Turn ON</button>
+          <button onClick={turnPumpOff}>Turn OFF</button>
+        </div>
+
+      </div>
+
+      <div className="footer">
+        Live Data from ESP8266 • Firebase RTDB
+      </div>
     </div>
   );
 }
